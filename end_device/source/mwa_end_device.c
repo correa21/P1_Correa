@@ -28,6 +28,8 @@
 #include "TimersManager.h"
 #include "FunctionLib.h"
 
+#include "MyNewTask.h"
+
 #if mEnterLowPowerWhenIdle_c
   #include "PWR_Interface.h"
 #endif
@@ -213,6 +215,8 @@ void main_task(uint32_t param)
 #if gNvmTestActive_d
         NvModuleInit();
 #endif
+
+        MyTask_Init();
         
         /* Bind to MAC layer */
         macInstance = BindToMAC( (instanceId_t)0 );
@@ -421,19 +425,19 @@ void AppThread(osaTaskParam_t argument)
                 msg.msgType = gMlmeSetReq_c;
                 msg.msgData.setReq.pibAttribute = gMPibShortAddress_c;
                 msg.msgData.setReq.pibAttributeValue = (uint8_t *)&maMyAddress[0];
-                (void)NWK_MLME_SapHandler( &msg, 0 ); //send MLME msg pib my address
+                (void)NWK_MLME_SapHandler( &msg, 0 );
                 msg.msgType = gMlmeSetReq_c;
                 msg.msgData.setReq.pibAttribute = gMPibCoordShortAddress_c;
                 msg.msgData.setReq.pibAttributeValue = (uint64_t *)&mCoordInfo.coordAddress;
-                (void)NWK_MLME_SapHandler( &msg, 0 );//send MLME msg  coord addres
+                (void)NWK_MLME_SapHandler( &msg, 0 );
                 msg.msgType = gMlmeSetReq_c;
                 msg.msgData.setReq.pibAttribute = gMPibPanId_c;
                 msg.msgData.setReq.pibAttributeValue = (uint16_t *)&mCoordInfo.coordPanId;
-                (void)NWK_MLME_SapHandler( &msg, 0 );//send MLME msg PAN id
+                (void)NWK_MLME_SapHandler( &msg, 0 );
                 msg.msgType = gMlmeSetReq_c;
                 msg.msgData.setReq.pibAttribute = gMPibLogicalChannel_c;
                 msg.msgData.setReq.pibAttributeValue = (uint8_t *)&mCoordInfo.logicalChannel;
-                (void)NWK_MLME_SapHandler( &msg, 0 );              //send MLME msg logical channel
+                (void)NWK_MLME_SapHandler( &msg, 0 );                 
                 Serial_Print(interfaceId, "\n\rPIB elements restored from NVM:\n\r", gAllowToBlock_d); 
                 Serial_Print(interfaceId, "\n\rAddress...........0x", gAllowToBlock_d); Serial_PrintHex(interfaceId, (uint8_t*)&mCoordInfo.coordAddress, mCoordInfo.coordAddrMode == gAddrModeShortAddress_c ? 2 : 8, gPrtHexNoFormat_c);
                 Serial_Print(interfaceId, "\n\rPAN ID............0x", gAllowToBlock_d); Serial_PrintHex(interfaceId, (uint8_t*)&mCoordInfo.coordPanId, 2, gPrtHexNoFormat_c);
@@ -553,6 +557,9 @@ void AppThread(osaTaskParam_t argument)
                             TMR_StartLowPowerTimer(mTimer_c, gTmrSingleShotTimer_c ,mPollInterval, AppPollWaitTimeout, NULL );
                             /* Go to the listen state */
                             gState = stateListen;
+
+                            MyTaskTimer_Start();
+
                             OSA_EventSet(mAppEvent, gAppEvtDummyEvent_c); 
                         }        
                         else 
@@ -606,7 +613,7 @@ void AppThread(osaTaskParam_t argument)
             }
 #endif
             break;
-        }/*EOS*/
+        }
 
         if (pMsgIn)
         {
