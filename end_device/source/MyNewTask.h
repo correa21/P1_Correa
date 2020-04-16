@@ -19,9 +19,10 @@
 #include "fsl_os_abstraction.h"
 
 /* Define the available Task's Events */
-#define gMyNewTaskEvent1_c (1 << 0)
-#define gMyNewTaskEvent2_c (1 << 1)
-#define gMyNewTaskEvent3_c (1 << 2)
+#define gStart 		(1 << 0)
+#define gTrigger 	(1 << 1)
+#define gSW3Event 	(1 << 2)
+#define gSW4Event	(1 << 3)
 
 #define gMyTaskPriority_c 3
 #define gMyTaskStackSize_c 400
@@ -31,7 +32,8 @@
 #define GREEN	LED3
 
 void MyTaskTimer_Start(void);
-void MyTaskTimer_Stop(void);
+void MyTaskTimer_SW3(void);
+void MyTaskTimer_SW4(void);
 void MyTask_Init(void);
 
 #endif /* MYNEWTASK_H_ */

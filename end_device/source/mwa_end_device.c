@@ -1188,9 +1188,21 @@ static void App_HandleKeys
     case gKBD_EventLongSW3_c:
     case gKBD_EventLongSW4_c:
     case gKBD_EventSW1_c:
+		if (stateListen == gState)
+		{
+			MyTaskTimer_SW4();
+			break;
+		}
     case gKBD_EventSW2_c:
+    	if (stateListen == gState)
+		{
+			MyTaskTimer_SW3();
+			break;
+		}
     case gKBD_EventSW3_c:
+
     case gKBD_EventSW4_c:
+
 #if gTsiSupported_d
     case gKBD_EventSW5_c:    
     case gKBD_EventSW6_c:    

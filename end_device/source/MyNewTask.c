@@ -25,19 +25,24 @@ static uint8_t counter = 0;
 /* This is the function called by the Timer each time it expires */
 static void myTaskTimerCallback(void *param)
 {
-	OSA_EventSet(mMyEvents, gMyNewTaskEvent2_c);
+	OSA_EventSet(mMyEvents, gTrigger);
 }
 
 /* Public function to send an event to start the timer */
 void MyTaskTimer_Start(void)
 {
-	OSA_EventSet(mMyEvents, gMyNewTaskEvent1_c);
+	OSA_EventSet(mMyEvents, gStart);
 }
 
 /* Public function to send an event to stop the timer */
-void MyTaskTimer_Stop(void)
+void MyTaskTimer_SW3(void)
 {
-	OSA_EventSet(mMyEvents, gMyNewTaskEvent3_c);
+	OSA_EventSet(mMyEvents, gSW3Event);
+}
+/* Public function to send an event to stop the timer */
+void MyTaskTimer_SW4(void)
+{
+	OSA_EventSet(mMyEvents, gSW4Event);
 }
 
 
@@ -52,7 +57,7 @@ void My_Task(osaTaskParam_t argument)
 		&customEvent);
 		if( !gUseRtos_c && !customEvent)
 		{
-		break;
+			break;
 		}
 		/* Depending on the received event */
 		switch(customEvent)
@@ -106,10 +111,18 @@ void My_Task(osaTaskParam_t argument)
 				}
 			break;
 
-			case gMyNewTaskEvent3_c: /* Event to stop the timer */
-				counter = 0;
+			case gMyNewTaskEvent3_c: /* Event to set timer to 1 */
+				counter = 1;
 				TurnOffLeds();
 				TMR_StopTimer(myTimerID);
+				MyTaskTimer_Start();
+			break;
+
+			case gMyNewTaskEvent4_c: /* Event to set timer to 2 */
+				counter = 2;
+				TurnOffLeds();
+				TMR_StopTimer(myTimerID);
+				MyTaskTimer_Start();
 			break;
 
 			default:
