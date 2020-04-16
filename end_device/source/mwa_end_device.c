@@ -93,6 +93,9 @@ resultType_t MLME_NWK_SapHandler (nwkMessage_t* pMsg, instanceId_t instanceId);
 resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanceId);
 extern void Mac_SetExtendedAddress(uint8_t *pAddr, instanceId_t instanceId);
 
+
+void App_sendCounter(uint8_t counter);
+
 /************************************************************************************
 *************************************************************************************
 * Private type definitions
@@ -374,6 +377,9 @@ void AppThread(osaTaskParam_t argument)
     /* Stores the status code returned by some functions. */
     uint8_t rc;
     
+    /* Local variable utilized to store the value of counter and check if change */
+    uint8_t counter = MyTask_counterValue();
+
     while(1)
     {
         OSA_EventWait(mAppEvent, osaEventFlagsAll_c, FALSE, osaWaitForever_c, &ev);
@@ -647,6 +653,14 @@ void AppThread(osaTaskParam_t argument)
         {
             break;
         }        
+
+        if (counter != MyTask_counterValue())
+        {
+        	App_sendCounter(counter);
+        	counter = MyTask_counterValue();
+        }
+
+
     } /* while(1) */
 }
 
@@ -1240,4 +1254,66 @@ resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanc
   MSG_Queue(&mMcpsNwkInputQueue, pMsg);
   OSA_EventSet(mAppEvent, gAppEvtMessageFromMCPS_c);
   return gSuccess_c;
+}
+
+
+
+
+/******************************************************************************
+* The following function its called whenever you want to send a specific
+* value as the counter value
+******************************************************************************/
+
+void App_sendCounter(uint8_t counter)
+{
+	uint8_t count = 9;
+	uint8_t msg[9] = "Counter:";
+	msg[8] = (counter + 48);
+	/* Use multi buffering for increased TX performance. It does not really
+	    have any effect at low UART baud rates, but serves as an
+	    example of how the throughput may be improved in a real-world
+	    application where the data rate is of concern. */
+	    if( (mcPendingPackets < mDefaultValueOfMaxPendingDataPackets_c) && (mpPacket == NULL) )
+	    {
+	        /* If the maximum number of pending data buffes is below maximum limit
+	        and we do not have a data buffer already then allocate one. */
+	        mpPacket = MSG_Alloc(sizeof(nwkToMcpsMessage_t) + gMaxPHYPacketSize_c);
+	    }
+
+	    if(mpPacket != NULL)
+	    {
+	        /* Data is available in the SerialManager's receive buffer. Now create an
+	        MCPS-Data Request message containing the data. */
+	        mpPacket->msgType = gMcpsDataReq_c;
+	        mpPacket->msgData.dataReq.pMsdu = (uint8_t*)(&mpPacket->msgData.dataReq.pMsdu) +
+	                                          sizeof(mpPacket->msgData.dataReq.pMsdu);
+
+	        mpPacket->msgData.dataReq.pMsdu = &msg;
+	        //Serial_Read(interfaceId, mpPacket->msgData.dataReq.pMsdu, count, &count);
+	        /* Create the header using coordinator information gained during
+	        the scan procedure. Also use the short address we were assigned
+	        by the coordinator during association. */
+	        FLib_MemCpy(&mpPacket->msgData.dataReq.dstAddr, &mCoordInfo.coordAddress, 8);
+	        FLib_MemCpy(&mpPacket->msgData.dataReq.srcAddr, &maMyAddress, 8);
+	        FLib_MemCpy(&mpPacket->msgData.dataReq.dstPanId, &mCoordInfo.coordPanId, 2);
+	        FLib_MemCpy(&mpPacket->msgData.dataReq.srcPanId, &mCoordInfo.coordPanId, 2);
+	        mpPacket->msgData.dataReq.dstAddrMode = mCoordInfo.coordAddrMode;
+	        mpPacket->msgData.dataReq.srcAddrMode = mAddrMode;
+	        mpPacket->msgData.dataReq.msduLength = count;
+	        /* Request MAC level acknowledgement of the data packet */
+	        mpPacket->msgData.dataReq.txOptions = gMacTxOptionsAck_c;
+	        /* Give the data packet a handle. The handle is
+	        returned in the MCPS-Data Confirm message. */
+	        mpPacket->msgData.dataReq.msduHandle = mMsduHandle++;
+	        /* Don't use security */
+	        mpPacket->msgData.dataReq.securityLevel = gMacSecurityNone_c;
+
+	        /* Send the Data Request to the MCPS */
+	        (void)NWK_MCPS_SapHandler(mpPacket, macInstance);
+
+	        /* Prepare for another data buffer */
+	        mpPacket = NULL;
+	        mcPendingPackets++;
+	    }
+
 }

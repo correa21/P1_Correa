@@ -62,7 +62,7 @@ void My_Task(osaTaskParam_t argument)
 		/* Depending on the received event */
 		switch(customEvent)
 		{
-			case gMyNewTaskEvent1_c:
+			case gStart:
 				TMR_StartIntervalTimer(myTimerID, /*myTimerID*/
 				3000, /* Timer's Timeout */
 				myTaskTimerCallback, /* pointer to
@@ -72,7 +72,7 @@ void My_Task(osaTaskParam_t argument)
 				TurnOffLeds(); /* Ensure all LEDs are turned off */
 			break;
 
-			case gMyNewTaskEvent2_c: /* Event called from myTaskTimerCallback */
+			case gTrigger: /* Event called from myTaskTimerCallback */
 
 				switch (counter)
 				{
@@ -111,14 +111,14 @@ void My_Task(osaTaskParam_t argument)
 				}
 			break;
 
-			case gMyNewTaskEvent3_c: /* Event to set timer to 1 */
+			case gSW3Event: /* Event to set timer to 1 */
 				counter = 1;
 				TurnOffLeds();
 				TMR_StopTimer(myTimerID);
 				MyTaskTimer_Start();
 			break;
 
-			case gMyNewTaskEvent4_c: /* Event to set timer to 2 */
+			case gSW4Event: /* Event to set timer to 2 */
 				counter = 2;
 				TurnOffLeds();
 				TMR_StopTimer(myTimerID);
@@ -139,4 +139,9 @@ void MyTask_Init(void)
 	mMyEvents = OSA_EventCreate(TRUE);
 	/* The instance of the MAC is passed at task creaton */
 	gMyTaskHandler_ID = OSA_TaskCreate(OSA_TASK(My_Task), NULL);
+}
+
+uint8_t MyTask_counterValue(void)
+{
+	return (counter);
 }

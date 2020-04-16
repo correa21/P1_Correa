@@ -35,5 +35,6 @@ void MyTaskTimer_Start(void);
 void MyTaskTimer_SW3(void);
 void MyTaskTimer_SW4(void);
 void MyTask_Init(void);
+uint8_t MyTask_counterValue(void);
 
 #endif /* MYNEWTASK_H_ */
