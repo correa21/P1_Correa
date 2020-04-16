@@ -50,6 +50,10 @@
 /* The chars will be send over the air when there are no pending packets*/
 #define mMaxKeysToReceive_c 32
 
+
+#define RED 	LED2
+#define BLUE	LED4
+#define GREEN	LED3
 /************************************************************************************
 *************************************************************************************
 * Private prototypes
@@ -74,6 +78,9 @@ resultType_t MLME_NWK_SapHandler (nwkMessage_t* pMsg, instanceId_t instanceId);
 resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanceId);
 extern void Mac_SetExtendedAddress(uint8_t *pAddr, instanceId_t instanceId);
 
+static bool_t APP_IsCounter(uint8_t* msg);
+static void App_CounterLEDset(uint8_t counterValue);
+
 /************************************************************************************
 *************************************************************************************
 * Private type definitions
@@ -95,7 +102,7 @@ static uint8_t mLogicalChannel;
 
 /* These byte arrays stores an associated
    devices long and short addresses. */
-static uint16_t mDeviceShortAddress = 0xFFFF;
+static uint16_t mDeviceShortAddress = 0x0000;
 static uint64_t mDeviceLongAddress = 0xFFFFFFFFFFFFFFFF;
 
 /* Data request packet for sending UART input to the coordinator */
@@ -828,6 +835,10 @@ static void App_HandleMcpsInput(mcpsToNwkMessage_t *pMsgIn, uint8_t appInstance)
     /* The MCPS-Data indication is sent by the MAC to the network
        or application layer when data has been received. We simply
        copy the received data to the UART. */
+	  if(APP_IsCounter(pMsgIn->msgData.dataInd.pMsdu))
+	  {
+		  App_CounterLEDset(pMsgIn->msgData.dataInd.pMsdu[8]);
+	  }
     Serial_SyncWrite( interfaceId,pMsgIn->msgData.dataInd.pMsdu, pMsgIn->msgData.dataInd.msduLength );
     break;
     
@@ -1004,4 +1015,47 @@ resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanc
   MSG_Queue(&mMcpsNwkInputQueue, pMsg);
   OSA_EventSet(mAppEvent, gAppEvtMessageFromMCPS_c);
   return gSuccess_c;
+}
+
+static bool_t APP_IsCounter(uint8_t* msg)
+{
+	uint8_t header_size = 8;
+	uint8_t str_length = 0;
+	uint8_t conter_header[8] = "Counter:";
+
+	for(str_length = 0 ; str_length < header_size ; str_length++)
+	{
+		if(msg[str_length] != conter_header[str_length])
+			return FALSE;
+	}
+		return TRUE;
+}
+
+static void App_CounterLEDset(uint8_t counterValue)
+{
+	switch ((counterValue - '0'))
+	{
+		case 0:
+			TurnOffLeds();
+			Led_TurnOn(RED);
+		break;
+
+		case 1:
+			TurnOffLeds();
+			Led_TurnOn(GREEN);
+		break;
+
+		case 2:
+			TurnOffLeds();
+			Led_TurnOn(BLUE);
+		break;
+
+		case 3:
+			TurnOffLeds();
+			TurnOnLeds();
+		break;
+
+		default:
+		break;
+	}
 }
