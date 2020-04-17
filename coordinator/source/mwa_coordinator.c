@@ -37,7 +37,9 @@
 #include "board.h"
 #include "fsl_os_abstraction.h"
 
+
 #include "MyNewTask.h"
+#include "AccessControl.h"
 
 /************************************************************************************
 *************************************************************************************
@@ -78,7 +80,7 @@ resultType_t MLME_NWK_SapHandler (nwkMessage_t* pMsg, instanceId_t instanceId);
 resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanceId);
 extern void Mac_SetExtendedAddress(uint8_t *pAddr, instanceId_t instanceId);
 
-static bool_t APP_IsCounter(uint8_t* msg);
+static bool_t App_IsCounter(uint8_t* msg);
 static void App_CounterLEDset(uint8_t counterValue);
 
 /************************************************************************************
@@ -835,7 +837,7 @@ static void App_HandleMcpsInput(mcpsToNwkMessage_t *pMsgIn, uint8_t appInstance)
     /* The MCPS-Data indication is sent by the MAC to the network
        or application layer when data has been received. We simply
        copy the received data to the UART. */
-	  if(APP_IsCounter(pMsgIn->msgData.dataInd.pMsdu))
+	  if(App_IsCounter(pMsgIn->msgData.dataInd.pMsdu))
 	  {
 		  App_CounterLEDset(pMsgIn->msgData.dataInd.pMsdu[8]);
 	  }
@@ -1017,7 +1019,7 @@ resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanc
   return gSuccess_c;
 }
 
-static bool_t APP_IsCounter(uint8_t* msg)
+static bool_t App_IsCounter(uint8_t* msg)
 {
 	uint8_t header_size = 8;
 	uint8_t str_length = 0;
