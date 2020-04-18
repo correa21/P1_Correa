@@ -14,18 +14,18 @@ static uint8_t g_freeNodes = NUMBER_OF_NODES;
 
 static bool_t AccessControl_IsThereSpace(void);
 
-uint8_t AccessControl_CheckList(uint64_t Address)
+uint16_t AccessControl_CheckList(uint64_t Address)
 {
 	uint8_t nodeIndex = 0;
 	for (nodeIndex = 0 ; nodeIndex < NUMBER_OF_NODES ; nodeIndex++)
 	{
 		if (nodes[nodeIndex].Device_Address == Address)
-			return nodeIndex;
+			return nodes[nodeIndex].Short_Address;
 	}
 	return ERROR;
 }
 
-void AccessControl_SetNewNode(uint64_t DeviceAddress, uint8_t shortAddress, uint8_t RxOnWhenIdel, uint8_t DeviceType )
+void AccessControl_SetNewNode(uint64_t DeviceAddress, uint16_t shortAddress, uint8_t RxOnWhenIdel, uint8_t DeviceType )
 {
 	static uint8_t nextFreeNode = 0;
 	if(AccessControl_IsThereSpace())

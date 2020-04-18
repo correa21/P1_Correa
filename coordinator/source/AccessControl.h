@@ -9,6 +9,7 @@
 #define ACCESSCONTROL_H_
 
 #include "stdint.h"
+#include "EmbeddedTypes.h"
 
 #define NUMBER_OF_NODES		5U
 #define ERROR				255U
@@ -24,7 +25,9 @@ typedef	struct
 }node_t;
 
 
-uint8_t AccessControl_CheckList(uint64_t Address);
-void AccessControl_SetNewNode(uint64_t DeviceAddress, uint8_t shortAddress, uint8_t RxOnWhenIdel, uint8_t DeviceType );
+uint16_t AccessControl_CheckList(uint64_t Address);
 
+void AccessControl_SetNewNode(uint64_t DeviceAddress, uint16_t shortAddress, uint8_t RxOnWhenIdel, uint8_t DeviceType );
+
+uint8_t returnShortAdress(uint8_t node);
 #endif /* ACCESSCONTROL_H_ */

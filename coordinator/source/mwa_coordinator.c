@@ -724,6 +724,9 @@ static uint8_t App_SendAssociateResponse(nwkMessage_t *pMsgIn, uint8_t appInstan
 {
   mlmeMessage_t *pMsg;
   mlmeAssociateRes_t *pAssocRes;
+
+  uint16_t local_shortAddress;
+  static uint16_t shortAddress = 0x0001;
  
   Serial_Print(interfaceId,"Sending the MLME-Associate Response message to the MAC...", gAllowToBlock_d);
  
@@ -745,7 +748,21 @@ static uint8_t App_SendAssociateResponse(nwkMessage_t *pMsgIn, uint8_t appInstan
     if(pMsgIn->msgData.associateInd.capabilityInfo & gCapInfoAllocAddr_c)
     {
       /* Assign a unique short address less than 0xfffe if the device requests so. */
-      pAssocRes->assocShortAddress = 0x0001;
+
+    	//verificar si esta en el arreglo para asignar el short address
+
+    	local_shortAddress = AccessControl_CheckList(pMsgIn->msgData.associateInd.deviceAddress);
+
+    	if (ERROR != local_shortAddress)
+    		pAssocRes->assocShortAddress = local_shortAddress;
+    	else
+    	{
+    		pAssocRes->assocShortAddress =shortAddress;
+    		AccessControl_SetNewNode(pMsgIn->msgData.associateInd.deviceAddress,
+    								 shortAddress,
+									 (pMsgIn->msgData.associateInd.capabilityInfo && gCapInfoRxWhenIdle_c),
+									 (pMsgIn->msgData.associateInd.capabilityInfo && gCapInfoDeviceFfd_c));
+    	}
     }
     else
     {
@@ -767,6 +784,7 @@ static uint8_t App_SendAssociateResponse(nwkMessage_t *pMsgIn, uint8_t appInstan
     /* Send the Associate Response to the MLME. */
     if( gSuccess_c == NWK_MLME_SapHandler( pMsg, macInstance ) )
     {
+      shortAddress++;
       Serial_Print( interfaceId,"Done\n\r", gAllowToBlock_d );
       return errorNoError;
     }
@@ -840,8 +858,16 @@ static void App_HandleMcpsInput(mcpsToNwkMessage_t *pMsgIn, uint8_t appInstance)
 	  if(App_IsCounter(pMsgIn->msgData.dataInd.pMsdu))
 	  {
 		  App_CounterLEDset(pMsgIn->msgData.dataInd.pMsdu[8]);
+
+		  Serial_Print(interfaceId,"\n\r", gAllowToBlock_d);
+		  Serial_Print(interfaceId, "\n\rSource Address....0x", gAllowToBlock_d); Serial_PrintHex(interfaceId, (uint8_t*)&pMsgIn->msgData.dataInd.srcAddr, 8, gPrtHexNoFormat_c);
+		  Serial_Print(interfaceId, "\n\rLink Quality......0x", gAllowToBlock_d); Serial_PrintHex(interfaceId, &pMsgIn->msgData.dataInd.mpduLinkQuality, 1, gPrtHexNoFormat_c);
+		  Serial_Print(interfaceId, "\n\rOctet Payload.....0x", gAllowToBlock_d); Serial_PrintHex(interfaceId, &pMsgIn->msgData.dataInd.msduLength, 1, gPrtHexNoFormat_c);
+		  Serial_Print(interfaceId, "\n\rData Received.....", gAllowToBlock_d);Serial_SyncWrite( interfaceId,pMsgIn->msgData.dataInd.pMsdu, pMsgIn->msgData.dataInd.msduLength );
+
 	  }
-    Serial_SyncWrite( interfaceId,pMsgIn->msgData.dataInd.pMsdu, pMsgIn->msgData.dataInd.msduLength );
+	  else
+		  Serial_SyncWrite( interfaceId,pMsgIn->msgData.dataInd.pMsdu, pMsgIn->msgData.dataInd.msduLength );
     break;
     
   default:
@@ -1019,6 +1045,11 @@ resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanc
   return gSuccess_c;
 }
 
+
+/******************************************************************************
+* The following functions are called to verify if the receive msg is counter type
+* and for LED setting depending on the msg
+******************************************************************************/
 static bool_t App_IsCounter(uint8_t* msg)
 {
 	uint8_t header_size = 8;
